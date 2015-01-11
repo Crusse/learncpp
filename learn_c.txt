@@ -1,0 +1,335 @@
+char = byte = 8 bits
+word = 4 or 8 bytes = 32 or 64 bits
+
+int, short, long, long long are signed by default.
+char is by default compiler-defined signed/unsigned; you must define explicitly.
+no plain char or bool in arithmetic expressions; see above.
+use int, long long; not short, long.
+double for float, always. not really slower than float.
+
+result of assigning out-of-range val to signed type is undefined!
+don't mix signed and unsigned types!
+  the signed val will implicitly be converted to unsigned; a neg val will wrap around.
+
+the form and val of a literal determine its type.
+20: 20, 024, 0x14
+decimal literals signed by default; smallest fitting type of int..long long
+floats: 3.14, 3.14E0, 0., 0e0, .001
+floats are double by default; can override with suffix.
+char: 'a'
+string: "aaa" (arr of 4 const chars, \0-terminated)
+compiler concats whitespace-separated strs: "aaa" "bbb" "ccc"
+M-char: 'M', \115, \x4d
+
+initialization is not assigment.
+int i = 0; // (copy-)initialization
+i = 2; // assignment
+
+uninitialized variables are default-initialized.
+  built-in types outside of funcs are 0.
+  built-in types inside funcs are uninitialized (val is undefined).
+  class-types are initialized according to class constructor.
+value-initialization: compiler creates value for containers whose size but not initial value is specified.
+  int arr[10]; // uninitialized!
+  int arr[10] = {}; // val-inited to 10 ints of val 0
+should always initialize built-in types!
+
+declaration makes var type and name known to code.
+definition is declaration, plus it allocates storage and may define initial val.
+int i; // declaration
+extern int j; // definition
+
+compound types: references, pointers, arrays
+reference is an alias, just another name for var; must be initialized.
+  int i = 2, &ri = i;
+pointer can be unitialized. can't point to a reference.
+  double d = 2;
+  double *pd = &d; // address-of
+  *pd = 3; // dereference
+  cout << *pd; // dereference
+null pointers:
+  int *p = nullptr;
+  int *p = 0;
+  int *p = NULL; // must #include cstdlib; NULL is a preprocessor var, equals 0
+null pointers convert to false, otherwise true.
+two pointers compare equal if they point to same memory loc.
+as with other built-in types, should always initialize pointers!
+void pointers are used to handle memory as memory, not int/double/etc.
+ptr to ptr:
+  int i = 2;
+  int *pi = &i;
+  int **ppi = &pi;
+  cout << **ppi; // 2
+ref to ptr:
+  int *&ref = pi;
+  cout << *ref; // 2
+easier to understand definitions if read right to left.
+
+const int bufferSize = 512; // read-only; const must be initialized
+const vars are local to file, not global, by default.
+to share const in multiple files, must use extern in definition and declaration.
+  extern const i = 2; // stuff.cpp
+  extern const i; // stuff.h
+reference to const:
+  const int i = 2;
+  int &ref = i; // error, must be const int &ref
+reference to const can't be used to change nonconst val:
+  int i = 2; // i = 3 is ok
+  const int &ref = i; // ref = 3 is error
+can't create ref from literal: int &ref = 42;
+can create const ref from literal: const int &ref = 42;
+  useful in function params and returns:
+    void f( const string &str ) {}
+    f( "foobar" );
+pointer to const:
+  const int i = 2;
+  int *pi = &i; // error, must be const int *pi
+pointer to const can't be used to change nonconst val:
+  int i = 2; // i = 3 is ok
+  const int *pi = &i; // *pi = 3 is error
+const pointer:
+  int i = 2, j = 4;
+  int *pi = &i;
+  int *const pj = &j;
+  pj = &i; // error, can't change const pointer address
+  pi = &j; // ok, pi points to j
+can create pointer-to-const-int of non-const int:
+  int i = 2;
+  const int *pi2 = &i; // ok
+top-level const (objects themselves are const):
+  const int i = 2;
+  int *const pi = 0; // const pointer to int
+low-level const:
+  const int *pi = 0; // pointer to const int
+  const int &ref = i;
+
+some c++ uses require a constant expression, like array dimensions:
+  int arr[ myConstExpr ];
+constexpr int i = 42; // initializer is a constant expression
+const int i = 42; // is a constexpr
+const int i = myFunc(); // not necessarily a constexpr, if compiler can't get return val at compile-time
+
+typedef is a type alias.
+  typedef int numero; numero i = 2;
+  typedef numero *pnum; pnum = &i;
+  const pnum ptr = 0; // const pointer to int, _not_ pointer to const int
+C+11 has using:
+  using numero = int;
+
+declaration syntax: "base-type followed by declarators"
+  decl-specifier-seq init-declarator-list
+  decl-specifier-seq:
+    type specifiers: static, extern...
+    type keywords: char, int, typedef'd names, const, volatile...
+  init-declarator-list (declarators separated by commas)
+    *const p             const pointer to...
+    (*(*(&e)[10])())[5]  a ref to arr of 10 ptrs to function returning ptr to arr of 5...
+http://msdn.microsoft.com/en-us/library/tb971bed.aspx
+http://stackoverflow.com/questions/13808932/what-are-declarations-and-declarators-and-how-are-their-types-interpreted-by-the
+
+auto deduces type from initializer.
+  auto i = 2, *pi = &i; // ok: int and ptr to int; base type is int, * is part of declarator
+  auto i = 2, j = 3.14; // error: int and double
+auto usually ignores top-level const; must const explicitly.
+  const int i = 2;
+  auto j = i; // int
+  const auto j = i; // const int
+  auto &j = i; // ref to const int; const is low-level
+  auto pi = &i; // const int*
+decltype deduces type from the given expression.
+  decltype(func()) i = 2;
+decltype doesn't ignore top-level const and references when expression is a var:
+  const int i = 2, &ref = i;
+  decltype(ref) j = i; // const int&
+if expression is non-var, decltype returns its result:
+  decltype(ref + 0) j = 0; // int
+if an expression returns an lvalue, then decltype returns a reference:
+  decltype((i)) // (i) is an lvalue
+  decltype(*pi) // deref returns an lvalue
+
+#include copies a header files text to the including file.
+headers include class definitions, const vars etc. that can be defined only once in a file.
+header is usually named after the class that's inside it (My_class.h).
+header guards prevent one header from being included multiple times.
+headers shouldn't have "using" declarations, to prevent name conflicts.
+  the including file will use those "using" declarations automatically.
+using std::cin / using namespace std
+
+copy-initialization vs direct initialization: string s = "aaa" vs string s(3, 'a')
+cin >> str; // >> discards leading whitespace, reads up to first whitespace
+string operations: p. 86
+auto len = str.size(); // string methods return string::size_type (unsigned)
+  always use size_type for accessing chars etc., like in str[len-1]
+  for ( decltype(str.size()) i = 0; i < str.size(); i++ )
+C library: original C lib is <name.h>; C++ version is <cname>
+  <cname> libraries are in the std namespace.
+range-for:
+  for ( auto &c : str ) // c is a copy; &c is a reference
+    c = toupper( c );
+
+vector is a template. compiler creates classes or functions with templates.
+vector<int> nums; // empty vector, can be added to
+vector<string> strs = { "aaa", "bbb" }; // can omit the =
+vector<string> strs( 10, "hi" ); // 10 times "hi"; using parentheses means that we "construct the object"
+strs.push_back( "additional str" ), strs.size(), strs.empty()
+use vector<int>::size_type in loops.
+
+str.begin(), nums.begin() // iterator: first element of string or vector
+str.end(), nums.end() // one past the last element; begin() == end() if empty
+each container class defines iterator type, like vector<int>::iterator.
+  also const iterator for read-only, like string::const_iterator.
+  s.begin() and s.end() return const iterators if s is const.
+  cbegin() and cend() always return const iterators.
+(*it).empty() / it->empty()
+pointers are iterators, but iterators are not necessarily pointers.
+  all iterators have to implement * and ++.
+iterator arithmetic: +=, -=, iter1 - iter2 etc.
+
+arrays: int a[d]; // d is the dimension, i.e. amount of elems; must be constexpr
+uninitialized arr will have undefined values if defined inside a func, just like other built-in types.
+  int a[10]; // undefined vals if inside function
+  int a[10] = {}; // all vals 0 if inside function
+int a[] = { 1, 2, 3 }; // can omit dimension if list-initialized
+int *ptrs[10]; // arr of 10 ptrs to int
+int &refs[10]; // arr of 10 refs to int
+int ( *ptr )[10] = &arr; // ptr to array of 10 ints
+int ( &ref )[10] = arr; // ref to array of 10 ints
+start reading arrays from inside out rather than right-to-left.
+
+compiler substitutes arrays in most places to ptr to first elem. these are same:
+  string *p = &arr[0];
+  string *p = arr;
+special case: can get address-of elem one past last elem
+  int arr[10] = {}; // index 0-9
+  int *end = arr[10]; // can be used in loops like end() with iterators
+  c++11 defines funcs begin() and end() that take an arr and return ptr
+    #include <iterator>
+#include <cstddef>
+  vars used to subscript an arr should use size_t
+  size_t is big enough to hold the size of (see sizeof) _any_ object in memory!
+  subtracting two pointers returns ptrdiff_t
+arr[2] is the same as *(arr + 2)
+unlike library containers, arrays can use negative indices:
+  int arr[3] = {};
+  int *p = &arr[1]; // same as  int *p = arr + 1;
+  p[-1]; // same as  arr[0]  or  *(p - 1)
+using the name of an arr is just using the ptr to the first elem.
+if p is a pointer, then  p[n]  is the same as  *(p + n)
+even though array usually decays to ptr-to-first-elem, arrays are not pointers!
+  char c[10]; // array of 10 chars
+  char **c = &c; // error. &c is a ptr to 10 chars, char (*)[10], not a pointer-to-pointer-to-first-elem
+array to pointer-to-first-elem conversion doesn't happen with:
+  decltype, address-of (&), sizeof, typeid, ref to array (int (&ref)[10] = arr)
+
+C-style strings are char arrays with the last elem being null.
+C library funcs require that the null exists, otherwise they don't work correctly.
+can get C-style char arr from std::string: str.c_str() // return const char*
+  if the std::string changes, might invalidate the array
+can use arr to initialize vector: vector<int> vec( begin(arr), end(arr) );
+  can init with subset: vector<int> vec( arr + 1, arr + 3 );
+multidimensional arrays:
+  int arr[3][2] = { { 0, 1 }, { 2, 3 }, { 4, 5 } };
+  looping with range-for _must_ use ref for all but innermost loop (see diff between pointer-to-first-elem and array above).
+    for ( int (&row)[2] : arr ) // int *row would be ptr to first elem of the row
+      for ( int col : row )     // inner loop couldn't loop over int*
+
+lvalue expression: we use the object's location in memory (returns obj or func).
+rvalue expression: we use the object's value.
+operators require and return lvalue or rvalue.
+  can use rvalue when lvalue (loc in mem) is required, but not vice versa.
+lvalue = 123; // returns lvalue
+&lvalue; // returns rvalue (a pointer)
+arr[0]  or  *(ptr) // returns lvalue
+i++ // returns lvalue
+
+most operators don't define the order in which operands are eval'ed:
+  cout << i << ++i << endl; // could output 01 or 11
+only these operators guarantee eval order: &&  ||  ?:  ,
+a() + b() * c() + d() // no idea which order the funcs are called in
+when comparing arithmetic value (or ptr) and bool, the bool is converted to int:
+  if ( i == true ) // i == 1
+  if ( i ) // not quite the same as above; the if returns true even if i = 2
+associativity means how operators with same precedence are grouped.
+  parenthesize expressions (mentally) to see how an operator's left/right associativeness works in a multi-operator expression.
+assignment is right-associative.
+++i returns i as lvalue.
+i++ returns copy of i as rvalue.
+always use ++i when possible!
+
+use unsigned vals with bitwise operators! negative val sign bit handling varies.
+overloaded bitwise operators have same associativeness as the bitwise operators.
+
+sizeof returns size_t (type big enough to hold size of any object in mem)
+  sizeof (type)  or  sizeof expr (returns size of type returned by expr)
+sizeof does _not_ eval its operand:
+  int arr[10]; int *ptr = arr;
+  sizeof( arr ); // arr is not evaled to ptr to first elem; returns 10*sizeof(int)
+  sizeof( *ptr ); // ptr points to first elem; returns sizeof(int)
+
+two types are related if there exists a conversion between them.
+arithmetic type implicit conversions preserve precision.
+initialization converts initializer to object's type.
+int i = 3.234 + 5; // 5 converts to double, result of addition is converted to int for i
+when implicit conversions occur: p. 159
+arithmetic types are converted to widest arithm type of operands (i.e. int to double).
+integral types are converted to floating point types.
+array-to-pointer-to-first-elem conversion doesn't happen with:
+  decltype, address-of (&), sizeof, typeid, ref to array (int (&ref)[10] = arr)
+static_cast<double>( myVar ); // also const_cast, reinterpret_cast
+old style casts (i.e. (int) expr) do one of the C++ style casts implicitly.
+
+blocks turn multiple statements into one, and define a scope.
+switch expression is converted to integral type. case val must be integral const expression.
+defining vars inside a case could lead to trouble. p. 182
+
+function return type can be void if it doesn't return a value.
+scope of a name is the part of code that the text is visible in.
+lifetime of an object is the time during program execution in which object exists.
+static var inside function is initialized before function is called, and destroyed when program ends.
+params are initialized by args in the same way as variable initialization.
+funcs should be declared in .h, defined in .cpp.
+  .cpp file should include the .h file, to make sure the func proto in .h matches .cpp definition return type and params.
+separate compilation: multiple .cpp files -> linking multiple object files -> one .exe
+array is always passed as pointer to first elem, but param can be any of these:
+  void print( int* );
+  void print( int[] );
+  void print( int[10] ); // 10 acts as documentation; still passed as int*
+ways to handle array elem count in functions: C-style null, pass in begin() and end() ptr, pass in count. p. 216
+ref and ptr params (arrays too) should be const if they're not changed inside the func.
+reference-to-array param does not make the arg decay to a pointer-to-first-elem:
+  void print( int (&arr)[10] ); // passed in arr _must_ have 10 ints
+multidimensional array:
+  void print( int (*arr)[10] ); // arr is ptr-to-first-row; each col has 10 elems
+  void print( int arr[][10] ); // same as above; apparently compiler ignores row count because arr decays to ptr
+
+http://eli.thegreenplace.net/2009/10/21/are-pointers-and-arrays-equivalent-in-c
+
+initializer list:
+  void printErrMsg( int errCode, initializer_list<string> il );
+  printErrMsg( 42, { "Error result: ", "fail" } );
+  vector's constructor can take an initializer_list; that's why you can initialize a vector with { ... }
+return; // only usable in void funcs
+never return a ref or a pointer to a func's local object (var or literal)! think of object lifetime.
+
+int *arr[10]; // array of 10 pointers to int
+int ( *arr )[10]; // pointer to array of 10 ints
+int ( *func( int i ) )[10]; // func returns pointer to array of 10 ints
+decltype string (&strArrRef())[10];
+const strArrRef myVar(); // returns a const reference to an array of 10 strings
+
+overloaded function are chosen by compiler based on params the func is called with.
+overloaded functions must have diff amount of params, or diff param types.
+print( const char *cp )
+print( const string str )
+print( const int *beg, const int *end )
+
+
+
+
+
+
+
+
+
+
+
