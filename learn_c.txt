@@ -3,9 +3,32 @@ word = 4 or 8 bytes = 32 or 64 bits
 
 int, short, long, long long are signed by default.
 char is by default compiler-defined signed/unsigned; you must define explicitly.
-no plain char or bool in arithmetic expressions; see above.
-use int, long long; not short, long.
-double for float, always. not really slower than float.
+don't use plain char or bool in arithmetic expressions; see above.
+NOTE: use int, long long; not short, long.
+if you need tiny int, use signed char or unsigned char.
+NOTE: use double for float, always. not really slower than float.
+
+minimum sizes guaranteed by compilers:
+char                8 bits
+wchar_t             16 bits
+char16_t (unicode)  16 bits
+char32_t (unicode)  32 bits
+int                 16 bits ('unsigned int' can be abbrev'd to 'unsigned')
+long                32 bits (at least as big as int)
+long long           64 bits (at least as big as long)
+double              10 significant digits (typically 64 bits)
+
+suffixes/postfixes/prefixes in literals:
+u'a'    char16_t
+U'a'    char32_t
+L'a'    wchar_t
+u8'a'   char (utf-8)
+10U     unsigned
+10LL    long long
+10ULL   unsigned long long
+10.0    double
+10.0F   float
+10.0L   long double
 
 result of assigning out-of-range val to signed type is undefined!
 don't mix signed and unsigned types!
@@ -21,13 +44,14 @@ string: "aaa" (arr of 4 const chars, \0-terminated)
 compiler concats whitespace-separated strs: "aaa" "bbb" "ccc"
 M-char: 'M', \115, \x4d
 
-initialization is not assigment.
+NOTE: initialization is not assigment.
 int i = 0; // (copy-)initialization
 i = 2; // assignment
 
 uninitialized variables are default-initialized.
-  built-in types outside of funcs are 0.
-  built-in types inside funcs are uninitialized (val is undefined).
+  built-in types (like ints, arrays or pointers) outside of funcs and classes are 0.
+    presumably the C++ standard initializes them to 0 because it can be done without runtime cost (at compile time); same goes with static vars.
+  built-in types inside funcs and classes are uninitialized (val is undefined).
   class-types are initialized according to class constructor.
 value-initialization: compiler creates value for containers whose size but not initial value is specified.
   int arr[10]; // uninitialized!
@@ -35,9 +59,10 @@ value-initialization: compiler creates value for containers whose size but not i
 should always initialize built-in types!
 
 declaration makes var type and name known to code.
-definition is declaration, plus it allocates storage and may define initial val.
-int i; // declaration
-extern int j; // definition
+definition is declaration, plus it allocates storage and may give initial val.
+extern int i; // declaration
+int j; // definition
+extern int k = 3; // initialization overrides the extern, so this is a definition
 
 compound types: references, pointers, arrays
 reference is an alias, just another name for var; must be initialized.
@@ -66,7 +91,7 @@ ref to ptr:
 easier to understand definitions if read right to left.
 
 const int bufferSize = 512; // read-only; const must be initialized
-const vars are local to file, not global, by default.
+const vars are local to file, not global, by default. i.e. the compiler will replace the const var with its value per file, creating multiple instances of the value.
 to share const in multiple files, must use extern in definition and declaration.
   extern const i = 2; // stuff.cpp
   extern const i; // stuff.h
@@ -153,13 +178,13 @@ header is usually named after the class that's inside it (My_class.h).
 header guards prevent one header from being included multiple times.
 headers shouldn't have "using" declarations, to prevent name conflicts.
   the including file will use those "using" declarations automatically.
-using std::cin / using namespace std
+using std::cin  or  using namespace std
 
 copy-initialization vs direct initialization: string s = "aaa" vs string s(3, 'a')
 cin >> str; // >> discards leading whitespace, reads up to first whitespace
 string operations: p. 86
 auto len = str.size(); // string methods return string::size_type (unsigned)
-  always use size_type for accessing chars etc., like in str[len-1]
+  NOTE: always use size_type for accessing chars etc., like in str[len-1]
   for ( decltype(str.size()) i = 0; i < str.size(); i++ )
 C library: original C lib is <name.h>; C++ version is <cname>
   <cname> libraries are in the std namespace.
@@ -279,7 +304,7 @@ static_cast<double>( myVar ); // also const_cast, reinterpret_cast
 old style casts (i.e. (int) expr) do one of the C++ style casts implicitly.
 
 blocks turn multiple statements into one, and define a scope.
-switch expression is converted to integral type. case val must be integral const expression.
+NOTE: switch expression is converted to integral type. case val must be integral const expression.
 defining vars inside a case could lead to trouble. p. 182
 
 function return type can be void if it doesn't return a value.
@@ -294,13 +319,14 @@ array is always passed as pointer to first elem, but param can be any of these:
   void print( int* );
   void print( int[] );
   void print( int[10] ); // 10 acts as documentation; still passed as int*
-ways to handle array elem count in functions: C-style null, pass in begin() and end() ptr, pass in count. p. 216
-ref and ptr params (arrays too) should be const if they're not changed inside the func.
+ways to handle array elem count in functions: C-style null (sentinel), pass in begin() and end() ptr, pass in count. p. 216
+NOTE: ref and ptr params (arrays too) should be const if they're not changed inside the func.
+NOTE: using ref or ptr for param with large data increases performance because it prevents copying the data; small data (e.g. int or double) should be passed by value
 reference-to-array param does not make the arg decay to a pointer-to-first-elem:
   void print( int (&arr)[10] ); // passed in arr _must_ have 10 ints
 multidimensional array:
-  void print( int (*arr)[10] ); // arr is ptr-to-first-row; each col has 10 elems
-  void print( int arr[][10] ); // same as above; apparently compiler ignores row count because arr decays to ptr
+  void print( int (*arr)[10] ); // arr is ptr-to-first-row; that is, ptr-to-array-of-10
+  void print( int arr[][10] ); // same as above; note: compiler ignores first level (i.e. the row count) because arr decays to ptr, so we don't need it here
 
 http://eli.thegreenplace.net/2009/10/21/are-pointers-and-arrays-equivalent-in-c
 
@@ -309,27 +335,265 @@ initializer list:
   printErrMsg( 42, { "Error result: ", "fail" } );
   vector's constructor can take an initializer_list; that's why you can initialize a vector with { ... }
 return; // only usable in void funcs
-never return a ref or a pointer to a func's local object (var or literal)! think of object lifetime.
+NOTE: never return a ref or a pointer to a func's local object (var or literal)! think of object lifetime.
+NOTE: always think if a var or param needs to be const or ref/pointer
 
 int *arr[10]; // array of 10 pointers to int
 int ( *arr )[10]; // pointer to array of 10 ints
-int ( *func( int i ) )[10]; // func returns pointer to array of 10 ints
+int ( *func( int i ) )[10]; // 'func' is a function that returns pointer-to-array-of-10-ints; 'func' isn't a pointer-to-function!
 decltype string (&strArrRef())[10];
 const strArrRef myVar(); // returns a const reference to an array of 10 strings
 
 overloaded function are chosen by compiler based on params the func is called with.
-overloaded functions must have diff amount of params, or diff param types.
+overloaded functions must have diff amount of params OR diff param types.
 print( const char *cp )
 print( const string str )
 print( const int *beg, const int *end )
 
+like any other pointer, ptr-to-func points to a particular type
+  func's type is determined by func return type and param types (i.e. the param signature)
+  int (*funcPtr); // the parens are necessary; otherwise would be a func that returns ptr-to-int
+int (*(*funcPtr)(int))[10] // 'funcPtr' points to a function that returns ptr-to-array-of-10-ints
+  dereferencing (e.g. *retVal) the ptr-to-array-of-10-ints yields the first element in that array, as usual
+when using a function's name as a value, it's automatically converted to a pointer
+  int (*(*myFuncPtr)(int))[10];
+  myFuncPtr = func;
+dereferencing is also automatic:
+  retVal = myFuncPtr(123); // same as  retVal = (*myFuncPtr)(123);
+like with arrays, can't have params that take a func, but can have param that takes ptr-to-func
+  like with arrays, can have param that looks like func, but is really a ptr-to-func
+  int myFunc( bool callback( int ) ); // same as  bool (*callback)( int )
+type aliasing makes writing params easier
+  typedef bool (*CallbackFunc)(int); // type is a ptr-to-function
+  or
+  typedef bool CallbackFunc(int); // type is a function; will automatically convert to ptr when used below
+  and then:
+  int myFunc( CallbackFunc callback );
+like with arrays, we CAN'T return a function type, but we can return ptr-to-function type
+must explicitly say that the func returns a PTR-to-func
+  int (*myFunc())(bool); // myFunc returns a ptr-to-func that takes a bool and returns an int
 
+methods must be _declared_ inside class body
+methods can be _defined_ inside or outside class body
+we can use class members inside methods without using 'this'; 'this' is implicit
+  by default, 'this' is a const-pointer to a non-const version of the current class, e.g. MyClassType *const
+  although 'this' is implicit, it follows the same initialization rules as other pointers, so keep in mind:
+    const int i = 123;
+    int *ptr = &i; // error: ptr is pointer-to-nonconst
+  if we have a const-object, e.g. const MyClassType, then we must make 'this' a pointer-to-const, with this syntax:
+    int MyClassType::myMethod const (); // this is called a 'const method'; the const is part of the signature, so can overload for non-const and const
+  const objects can only call const methods
+NOTE: you should have getters as const methods, so that the object can be used as const!
+methods defined _inside_ the class are implicitly inline
+  NOTE: 'inline' functions and methods are usually defined in header files (p. 240)
 
+constructor has the same name as the class
+constructors have no return type
+can have multiple constuctors, i.e. constructor can be overloaded (must have diff method signatures, of course)
+if no constructor is defined, constructor creates a 'synthesized default constructor'
+  default-initializes class vars if they aren't already initialized when defined (e.g. int myVar = 123;)
+can define default constructor manually: MyClassType::MyClassType() = default; // c++11 syntax; for older, use initializer list (see below)
+constructor initializer list can be used to do computation:
+  MyClassType::MyClassType(int a, int b): myVar(a * b), otherVar(b) {}
+NOTE: use in-class initializer when you can! i.e. initialize class var when defining it: int myVar = 123;
+NOTE: remember to initialize built-in types, as otherwise they're default-initialized to undefined!
 
+copying, assignment and destruction can also be defined manually per class; otherwise compiler synthesizes them
+synthesized versions copy, assign and destroy the object's member vars
+object is destroyed when they cease to exist, such as when its surrounding block exits, or when the array or vector it's in is destroyed
+probably need to manually define these if you allocate resources outside of the object's member vars
+  the synthesized versions of these handle vector and string object members properly when the object is assigned-to/copied/destroyed
+  NOTE: for the above reason, try to use vectors and strings as member vars instead of using manual dynamic memory
 
+only diff between 'class' and 'struct' is the default access specifier; private for class, public for struct
+you define access specifier as 'public:' or 'private:' on its own line; all following methods and vars are that access level
+regular functions can access an object's private vars if the object declares that function its 'friend' (p. 269)
+  in addition to the friend declaration, a regular func declaration is needed; friend declaration does _not_ act as a regular declaration
+  classes or methods can also be 'friend'
+    class Person { friend class PeopleManager; }; // PeopleManager can access privates of Person
+    class Person { friend void PeopleManager::doSmth(); }; // Only PeopleManager::doSmth() can access privates of Person
+  NOTE: friend can be a definition, but is never a declaration
+    class MyClass {
+      friend void doSmth() { cout << "test"; } // definition
+      void test() { doSmth(); } // error: doSmth is not declared
+    }
+    void test; // declaration
+    void MyClass::test() { doSmth(); } // OK: declaration seen
+can put a typedef inside a class; it must appear before it is used inside the class, so put it at the top
+  class Screen {
+    public:
+      typedef std::string::size_type scr_pos; // either
+      using scr_pos = std::string::size_type; // or
+member vars can be 'mutable', so that they can be changed even by const objects and const methods
+  'mutable' is a data member that is never const
+NOTE: be aware whether you should return a reference or a copy when returning an object of some class type
+  MyClass &someMethod() { return *this; } // returns a ref
+  MyClass someMethod() { return *this; } // returns a copy
+forward declaration declares the class but doesn't define it
+  class MyClass;
+  this incomplete type can be used in limited ways: can define refs or pointers to this type, and can _declare_ funcs to have this param or return type
+  NOTE: sometimes needed when a class has a ref or a pointer type to a yet-undeclared class
+compiler processes method definitions' bodies _after_ processing all the declarations in the class
+  this makes it possible to use a member inside a method even if the member is declared after the method definition
+  does not apply to return types and parameter types, which must be declared on lines before where they're used in the method declaration
+for names in a method's body, compiler resolves names like this:
+  look for declaration inside function (body and params), before where name is used
+  look for declaration inside class, before and after where name is used
+  look for declaration in the scope where method is declared, before where name is used
+NOTE: when method is defined outside class body, then the return type is outside the class scope
+  MyClass::SomeTypeDef MyClass::MyMethod( ParamType foo ); // must explicitly give return type scope, but param scope is implicitly class scope
 
+NOTE: members that are const or references must be initialized
+  int i;
+  int &iRef; // will refer to i after constructor
+  MyClass( int param ) { i = param; iRef = i; } // error: assigning is too late; refs must be initialized!
+  MyClass( int param ) i(param), iRef(i) {} // OK: using an initializer list
+by the time the constructor body begins executing, member initialization is already complete
+initializer list inits members in the order in which the members appear in the class definition
+a delegating constructor can be used to call one constructor from the initializer list of another constructor, to prevent duplication of initializer lists
 
+default constructor is used whenever we value- or default-initialize
+default initialization happens when:
+  define non-static var or array in block scope without initializer
+  class is used with the synthesized default constructor
+  class-typed members are not initialized in constructor initializer list
+value initialization happens when:
+  array is initialized with fewer initializer than array size
+  defining a local static object without initializer
+  explicitly requesting value initialization with the syntax  MyClass()
+    e.g. vector<string> myVar(10, "hi");
+NOTE: you should pretty much always define a default constructor, if other constructors are defined
+NOTE: objects that use default constructors should be defined without empty parens
+  MyClass obj(); // error: obj is a function!
+  MyClass obj; // OK
 
+any constructor that can be called with a single arg defines an _implicit_ conversion to the class's type
+  just like you can pass a double as the arg to an int param, you can pass, say, a std::string to a MyClass param
+  std::string str = "wat"; // conversion from char-array to std::string
+  conversion is done by using a temporary object
+compiler will automatically apply only _one_ class-type conversion
+  MyClass::MyClass( std::string );
+  void doSmth( MyClass obj );
+  doSmth( "wat" ); // error: requires 2 conversions: char-array -> std::string -> MyClass
+  doSmth( std::string( "wat" ) ); // OK
+  doSmth( MyClass( "wat" ) ); // OK
+can use 'explicit' in constructor (only in the in-class declaration) to prevent implicit conversion
+  explicit constructor can only be used with direct initialization
+  MyClass obj = "wat"; // error: uses copy-initialization
+  MyClass obj( "wat" ); // OK: uses direct init
+  MyClass obj = static_cast<MyClass>( "wat" ); // OK: uses cast for an explicit conversion
+  explicit can be used to prevent bugs:
+    You have a MyString(int size) class with a constructor that constructs a string of the given size. You have a function print(const MyString&), 
+    and you call it with print(3). You expect it to print "3", but it prints an empty string of length 3 instead.
 
+aggregate class:
+  - all data members are public (like in a c++ struct by default)
+  - doesn't define constructors
+  - no in-class initializers
+  - no base classes or virtual methods
+  struct Data { int i; string s; }
+  Data var = { 3, "wat" };
+literal class:
+  - same as a primitive literal (1, 1.3L, "string array"...)
+  - is useful in, for example, constexpr functions (whose return and param types must be constexpr)
+  - all its properties must be literal types and must have at least one constexpr constructor
 
+static member can be used through class or object
+  class MyClass { public: static void doSmth(); }
+  MyClass::doSmth();
+  MyClass obj; obj.doSmth(); // equivalent
+static members can't use 'this', explicitly or implicitly
+  MyClass::doSmth() can't call non-static members
+the 'static' keyword is used only in in-class declaration, not when defining outside the class
+we can't initialize static members in-class, unless member is also const/constexpr
+NOTE: in addition to the in-class declaration, you should always define statics outside the class (p. 303)
+static members can have incomplete types
+  class MyClass { static MyClass memberVar; } // memberVar is an incomplete type (declared but never defined), 
+                                              // as MyClass is not finished yet
+  class MyClass { MyClass *memberVar; } // also OK; incomplete type as non-static member must be ref/pointer
+  class MyClass { MyClass memberVar; } // error: data members must have complete type
+static members can be used as methods' default arguments
+
+iostream header:
+  istream, wistream // reads from stream
+  ostream, wostream // writes to stream
+  iostream, wiostream // reads and writes
+fstream header: (w)(i)(o)fstream // file stream (inherits from (i)(o)stream)
+sstream header: (w)(i)(o)stringstream // string stream (inherits from (i)(o)stream)
+NOTE: use refs/pointers to pass cin/cout etc. around, as they can't be copied or assigned
+you can't use a stream object if any of its fail bits are set, so remember to .clear()
+output streams have buffers, where output is stored before outputting (e.g. printing to cout)
+  can force output with endl, flush, reading cin, etc.
+  when input stream is tied to output stream, reading input stream flushes output stream first
+    cin >> val; // flushes cout
+  NOTE: interactive systems should tie input to output, so prompts will have text output before the user enters input
+only way to preserve existing data in file with fstream is to open it in 'app' mode
+  ofstream file1("filepath", ofstream::app | ofstream::out); // 'out' is implicit in ofstream
+  ofstream file2("filepath", ofstream::app); // equivalent
+istringstream is often used when manipulating both a line and individual words on it
+ostringstream is useful when you want to build up a string a little at a time
+NOTE: when using stream in a conditional, it's the same as doing  !cin.fail()
+
+iterator ranges are _left-inclusive ranges_. in math it has notation:  [i, j)
+NOTE: use vector unless you have a good reason to use some other library container (p. 327)
+list (doubly-linked) and forward_list (singly-linked) can add elems fast anywhere, but don't have random access
+for random access, use vector or deque (double-ended queue)
+NOTE: use iterators (and iterator ranges with begin() and end()), as their API is shared between all the standard containers (whereas suscript-notation isn't, e.g. with linked lists)
+initializing container as copy of another container (p. 335)
+  C c1( c2 ); // c1 is copy of c2. they must have same same container and element type
+  C c( beg, end ); // c is copy of the elements in the range of beg..end
+  container types are _not_ required to match when copying from iterator range
+  element types are neither required to match with an iterator range, if conversion is possible
+library defines an array type that's similar to built-in array, but pros are: .at(), iterators
+  array<int, 10>; // elems are default-initialized
+  array<int, 10> = { 1, 2, 3 }; // remaining elems are value-initialized
+the 6 ways to create and init a container:
+  vector<int> vec1; // default-initialized (0 outside func, undefined inside func)
+  vector<int> vec2 = { 1, 2, 3 }; // list-initialized
+  vector<int> vec3 = vec2; // copy
+  vector<int> vec4( vec3.begin(), vec3.end() ); // iterator range copy
+  sequential containers only (but not library-array):
+  vector<int> vec5( 10 ); // 10 value-initialized elems
+  vector<int> vec6( 10, 42 ); // 10 elems initialized with 42
+container types (other than array and associative container) define assign() method, that replaces all elems of container
+  list<string> names;
+  vector<const char*> oldStyle = { "ab", "cd" };
+  names = oldStyle; // error: can't copy, as the elem types differ
+  names.assign( oldStyle.begin(), oldStyle.end() ); // ok: copies from oldStyle
+swap() swaps the values of two containers. unlike assign(), it doesn't invalidate refs, pointers and iterators
+all containers implement == and !=. all except the unordered assoc containers implement >, >= etc. (p. 340)
+  both containers must have same type, and must have elems of same type
+
+NOTE: remember that when initializing or assigning an object to a container, the container has a _copy_ of that initializer / assigned object
+insert() can be used to insert one or more elems _before_ any iterator position of a container
+  NOTE: in a forward_list insertions and removes operate on pos _after_ iterator. it has no insert(), but insert_after(), etc.
+emplace() can be used to construct a new elem of the elem type. args to emplace() are passed to the elem type's constructor.
+  vector<Book> container;
+  container.emplace( "978-1-123-456", "Book 1" ); // creates a new Book directly in the space managed by the vector
+  container.push_back( Book( "978-1-123-456", "Book 1" ) ); // equivalent, but creates a temporary and copies it
+NOTE: always check that container is not empty before using front(), back(), subscript notation etc.
+accessing elems: subscript, at(), back(), front(). with out-of-range subscript, at() throws out_of_range exception, but subscript gives runtime error.
+removing elems: pop_back(), pop_front(), erase(iter), erase(iter1, iter2), clear()
+  popping doesn't return the element; you must get its value before popping
+forward_list has no insert, emplace, erase. instead it has: insert_after, emplace_after, erase_after. also: before_begin
+resize() removes elems, if new size is smaller than old size. otherwise adds elems (either value-initialized or explicit init as 2nd arg).
+NOTE: adding/removing elems in vector, string or deque might invalidate existing iterators, refs and pointers to the container
+vector elems are always contiguous. when adding elems to vector, the whole vector might be moved in memory to make the new elems fit.
+managing vector or string memory: shrink_to_fit(), capacity(), reserve(spaceForNElems)
+
+string class has many ways for construction from C-style char[]s, etc. (p. 360)
+string has mainly the same methods as other container types, and also some additional ones
+  substr(), append(), replace(), find(), find_first_of(), find_first_not_of() ...
+NOTE: string manipulation is often easier by using an index, rather than iterators
+NOTE: search functions return string::size_type, which is unsigned, so don't use a signed int to store it
+  if string wasn't found, find() returns string::npos, i.e. -1. because type is unsigned, it's the largest val of string::size_type.
+compare() works like the C-lib strcmp: it returns negative num, 0 or positive num
+c++11 defines functions to convert between strings and numbers: to_string(anyNumType), stoi(str, ptrWhereToStoreFirstNonNumber, base) ...
+
+adaptors are used to make one thing (func, class or iterator) act like another, e.g. to make the APIs of different containers the same (p. 369)
+  if you want to compare two containers of different type, you can use an adaptor to make ==, >, etc. work
+stack: uses deque by default, can be used with list or vector, too
+  pop() (doesn't return elem), push(), emplace(), top() (doesn't pop elem)
+queue and priority_queue: by default use deque and vector, respectively. can use list/vector or deque, respectively
+  pop() (doesn't return), front() (doesn't pop), back() (doesn't pop), top() (doesn't remove), push(), emplace()
 
