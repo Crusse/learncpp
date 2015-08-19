@@ -64,6 +64,8 @@ extern int i; // declaration
 int j; // definition
 extern int k = 3; // initialization overrides the extern, so this is a definition
 
+preprocessor variables are managed by preprocessor, not compiler. no need to use std:: prefix.
+
 compound types: references, pointers, arrays
 reference is an alias, just another name for var; must be initialized.
   int i = 2, &ri = i;
@@ -349,6 +351,43 @@ overloaded functions must have diff amount of params OR diff param types.
 print( const char *cp )
 print( const string str )
 print( const int *beg, const int *end )
+
+function default arg values should be specified in headers.
+func can be declared many times. when re-declaring, we can add default args but not modify prev declared default args.
+'inline' functions avoid function call overhead. hint to compiler to replace func calls with contents of func.
+for inline and constexpr functions, the compiler needs whole definition (not just declaration). define them in headers.
+
+assert(expr) is a preprocessor macro in <cassert>. exits program if expr is 0.
+preproc var NDEBUG makes assert() a no-op. should also disable our own debugging code by checking if NDEBUG is defined.
+useful to print in debugging: __func__, __FILE__, __LINE__, __TIME__, __DATE__
+
+function pointer: bool (*myPtr)( const string & );
+function's type is determined by return type and type of params. its name is not part of its type.
+myPtr = myFunc; // implicit conversion to ptr
+myPtr = &myFunc; // explicit
+myPtr( "test" ); // no need to deref
+(*myPtr)( "test" ); // equivalent
+function pointer params:
+  bool myFunc( const string &str );
+  void someFunc( bool (*passedInFunc)( const string &str ) );
+  void someFunc( bool passedInFunc( const string &str ) ); // equivalent
+  someFunc( myFunc ); // myFunc is automatically converted to a pointer-to-function
+  someFunc( &myFunc ); // explicit
+can use typedef to make param types prettier:
+  typedef bool (*ptrToFunc)( const string & ); // pointer-to-func type
+  typedef bool func( const string & ); // func type
+  void someFunc( ptrToFunc passedInFunc );
+  void someFunc( func passedInFunc ); // func type automatically converted to ptr
+can't return a function type, must always explicitly return a ptr-to-func type.
+  return &func;
+return type must be explicit (make this prettier with typedefs as with params above):
+  int (*otherFunc( string ))( bool ); // otherFunc is a func that returns a pointer to a func that returns int
+  typedef int (*func)( bool );
+  func otherFunc( string ); // equivalent
+  auto otherFunc( string ) -> int (*)( bool ); // also equivalent, with trailing return
+decltype doesn't convert a function name to a pointer.
+  int returnedFunc( bool );
+  decltype( returnedFunc ) *otherFunc( string ); // explicit ptr; decltype return func type, not ptr-to-func
 
 like any other pointer, ptr-to-func points to a particular type
   func's type is determined by func return type and param types (i.e. the param signature)
