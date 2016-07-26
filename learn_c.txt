@@ -460,18 +460,20 @@ probably need to manually define these if you allocate resources outside of the 
 
 only diff between 'class' and 'struct' is the default access specifier; private for class, public for struct
 you define access specifier as 'public:' or 'private:' on its own line; all following methods and vars are that access level
-regular functions can access an object's private vars if the object declares that function its 'friend' (p. 269)
+regular functions can access an object's private vars if the class declares that function its 'friend' (p. 269)
+  friend declarations can only appear inside the class definition
   in addition to the friend declaration, a regular func declaration is needed; friend declaration does _not_ act as a regular declaration
   classes or methods can also be 'friend'
     class Person { friend class PeopleManager; }; // PeopleManager can access privates of Person
     class Person { friend void PeopleManager::doSmth(); }; // Only PeopleManager::doSmth() can access privates of Person
   NOTE: friend can be a definition, but is never a declaration
     class MyClass {
-      friend void doSmth() { cout << "test"; } // definition
-      void test() { doSmth(); } // error: doSmth is not declared
+      friend void doSmth( int ); // not a regular declaration - methods in MyClass don't see doSmth() yet
+      void test() { doSmth( 2 ); } // error: doSmth is not declared
     }
-    void test; // declaration
-    void MyClass::test() { doSmth(); } // OK: declaration seen
+  Declare the function in addition to making it a friend:
+    void doSmth( int ); // declaration
+    void MyClass::test() { doSmth( 2 ); } // OK: declaration seen
 can put a typedef inside a class; it must appear before it is used inside the class, so put it at the top
   class Screen {
     public:
@@ -511,13 +513,13 @@ default initialization happens when:
   class is used with the synthesized default constructor
   class-typed members are not initialized in constructor initializer list
 value initialization happens when:
-  array is initialized with fewer initializer than array size
+  array is initialized with fewer initializers than array size
   defining a local static object without initializer
   explicitly requesting value initialization with the syntax  MyClass()
     e.g. vector<string> myVar(10, "hi");
 NOTE: you should pretty much always define a default constructor, if other constructors are defined
 NOTE: objects that use default constructors should be defined without empty parens
-  MyClass obj(); // error: obj is a function!
+  MyClass obj(); // error: obj is not a function!
   MyClass obj; // OK
 
 any constructor that can be called with a single arg defines an _implicit_ conversion to the class's type
