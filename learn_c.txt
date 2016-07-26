@@ -174,12 +174,12 @@ if an expression returns an lvalue, then decltype returns a reference:
   decltype((i)) // (i) is an lvalue
   decltype(*pi) // deref returns an lvalue
 
-#include copies a header files text to the including file.
+#include copies a file's text to the including file.
 headers include class definitions, const vars etc. that can be defined only once in a file.
 header is usually named after the class that's inside it (My_class.h).
 header guards prevent one header from being included multiple times.
 headers shouldn't have "using" declarations, to prevent name conflicts.
-  the including file will use those "using" declarations automatically.
+  if header file has "using", the including file will use those "using" declarations automatically.
 using std::cin  or  using namespace std
 
 copy-initialization vs direct initialization: string s = "aaa" vs string s(3, 'a')
@@ -262,20 +262,30 @@ multidimensional arrays:
 
 lvalue expression: we use the object's location in memory (returns obj or func).
 rvalue expression: we use the object's value.
+  rvalue is anything that isn't an lvalue. temporary values are rvalues:
+    MyClass obj; obj = MyClass(123); // here obj is a copy of the (rvalue) temporary MyClass(123)
+in the days of C an lvalue was simply anything you could put on the left side of assignment.
+  in C++ const complicates things, as you can't assign to a const var.
+  in C++11 rvalues are related to "move semantics", like: method(int&& rValRef) // && is an "rvalue reference"
 operators require and return lvalue or rvalue.
-  can use rvalue when lvalue (loc in mem) is required, but not vice versa.
-lvalue = 123; // returns lvalue
-&lvalue; // returns rvalue (a pointer)
+  can use rvalue when lvalue (memory location) is required, but not vice versa.
+var = 123; // returns lvalue (var) by copying rvalue (123)
+&lvalue; // returns rvalue (a pointer); we can't access it after this, as it's not assigned to a var (an lvalue)
 arr[0]  or  *(ptr) // returns lvalue
 i++ // returns lvalue
+http://stackoverflow.com/questions/3601602/what-are-rvalues-lvalues-xvalues-glvalues-and-prvalues
+https://isocpp.org/blog/2012/11/universal-references-in-c11-scott-meyers
+  If you can take the address of an expression, the expression is an lvalue.
+  If the type of an expression is an lvalue reference (e.g., T& or const T&, etc.), that expression is an lvalue.
+  Otherwise, the expression is an rvalue. rvalues correspond to temporary objects, such as those returned from functions or created through implicit type conversions. Most literal values (e.g., 10 and 5.3) are also rvalues.
 
 most operators don't define the order in which operands are eval'ed:
   cout << i << ++i << endl; // could output 01 or 11
-only these operators guarantee eval order: &&  ||  ?:  ,
+only these operators guarantee eval order: &&   ||   ? :   ,
 a() + b() * c() + d() // no idea which order the funcs are called in
 when comparing arithmetic value (or ptr) and bool, the bool is converted to int:
   if ( i == true ) // i == 1
-  if ( i ) // not quite the same as above; the if returns true even if i = 2
+  if ( i ) // _not_ the same as above; the if returns true even if i = 2
 associativity means how operators with same precedence are grouped.
   parenthesize expressions (mentally) to see how an operator's left/right associativeness works in a multi-operator expression.
 assignment is right-associative.
@@ -290,7 +300,7 @@ sizeof returns size_t (type big enough to hold size of any object in mem)
   sizeof (type)  or  sizeof expr (returns size of type returned by expr)
 sizeof does _not_ eval its operand:
   int arr[10]; int *ptr = arr;
-  sizeof( arr ); // arr is not evaled to ptr to first elem; returns 10*sizeof(int)
+  sizeof( arr ); // arr is not eval'd to ptr to first elem; returns 10*sizeof(int)
   sizeof( *ptr ); // ptr points to first elem; returns sizeof(int)
 
 two types are related if there exists a conversion between them.
@@ -317,6 +327,7 @@ params are initialized by args in the same way as variable initialization.
 funcs should be declared in .h, defined in .cpp.
   .cpp file should include the .h file, to make sure the func proto in .h matches .cpp definition return type and params.
 separate compilation: multiple .cpp files -> linking multiple object files -> one .exe
+  g++ main.cpp util.cpp net.cpp -o run.out
 array is always passed as pointer to first elem, but param can be any of these:
   void print( int* );
   void print( int[] );
@@ -329,8 +340,11 @@ reference-to-array param does not make the arg decay to a pointer-to-first-elem:
 multidimensional array:
   void print( int (*arr)[10] ); // arr is ptr-to-first-row; that is, ptr-to-array-of-10
   void print( int arr[][10] ); // same as above; note: compiler ignores first level (i.e. the row count) because arr decays to ptr, so we don't need it here
-
 http://eli.thegreenplace.net/2009/10/21/are-pointers-and-arrays-equivalent-in-c
+  A variable in C is just a convenient, alphanumeric pseudonym of a memory location.
+  Were we writing assembly code, we would just create a label in some memory location and then access this label instead of always hard-coding the memory value - and this is what the compiler does.
+  A label is something the compiler assigns at _compile time_.
+    This is why arrays passed to functions are converted to pointers (can't turn param names into addresses at compile-time).
 
 initializer list:
   void printErrMsg( int errCode, initializer_list<string> il );

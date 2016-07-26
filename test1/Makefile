@@ -1,5 +1,5 @@
 CC = g++
-CCFLAGS = -std=c++11 -I../primer -Wall
+CCFLAGS = -std=c++11 -I../primer -Wall -Werror=conversion
 BUILDDIR = build/
 
 all:
