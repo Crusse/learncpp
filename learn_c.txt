@@ -429,12 +429,17 @@ must explicitly say that the func returns a PTR-to-func
 methods must be _declared_ inside class body
 methods can be _defined_ inside or outside class body
 we can use class members inside methods without using 'this'; 'this' is implicit
-  by default, 'this' is a const-pointer to a non-const version of the current class, e.g. MyClassType *const
-  although 'this' is implicit, it follows the same initialization rules as other pointers, so keep in mind:
+  by default, 'this' is a const-pointer to a non-const version of the current class, e.g. MyClass *const
+  although 'this' is implicit, it follows the same initialization rules as other pointers:
+    // Regular variable:
     const int i = 123;
     int *ptr = &i; // error: ptr is pointer-to-nonconst
-  if we have a const-object, e.g. const MyClassType, then we must make 'this' a pointer-to-const, with this syntax:
-    int MyClassType::myMethod const (); // this is called a 'const method'; the const is part of the signature, so can overload for non-const and const
+    // Same principle, but with the automatically initialized 'this' when calling a method:
+    MyClass myObj.someMethod();
+    // -> calling someMethod initializes 'this' like:
+    MyClass *const this = &myObj;
+  if we have a const-object, e.g. const MyClass, then we must make 'this' a pointer-to-const, with this syntax:
+    int MyClass::myMethod const (); // this is called a 'const method'; the const is part of the signature, so can overload for non-const and const
   const objects can only call const methods
 NOTE: you should have getters as const methods, so that the object can be used as const!
 methods defined _inside_ the class are implicitly inline
@@ -454,6 +459,10 @@ NOTE: remember to initialize built-in types, as otherwise they're default-initia
 copying, assignment and destruction can also be defined manually per class; otherwise compiler synthesizes them
 synthesized versions copy, assign and destroy the object's member vars
 object is destroyed when they cease to exist, such as when its surrounding block exits, or when the array or vector it's in is destroyed
+  c++ has 3 types of storage: static, automatic, dynamic
+  static vars are global vars or local vars with 'static' keyword.
+  automatic vars are regular variables in scopes. they're destroyed when scope exits.
+  dynamic vars are created and destroyed with new/delete or malloc/free.
 probably need to manually define these if you allocate resources outside of the object's member vars
   the synthesized versions of these handle vector and string object members properly when the object is assigned-to/copied/destroyed
   NOTE: for the above reason, try to use vectors and strings as member vars instead of using manual dynamic memory
@@ -541,12 +550,13 @@ can use 'explicit' in constructor (only in the in-class declaration) to prevent 
     You have a MyString(int size) class with a constructor that constructs a string of the given size. You have a function print(const MyString&), 
     and you call it with print(3). You expect it to print "3", but it prints an empty string of length 3 instead.
 
-aggregate class:
-  - all data members are public (like in a c++ struct by default)
+aggregate class (can be initialized with initializer lists, unlike normal classes):
+  - all non-static _data_ members are public (like in a c++ struct by default)
+    - can have private and protected _methods_
   - doesn't define constructors
   - no in-class initializers
   - no base classes or virtual methods
-  struct Data { int i; string s; }
+  struct Data { int i; string s; };
   Data var = { 3, "wat" };
 literal class:
   - same as a primitive literal (1, 1.3L, "string array"...)
