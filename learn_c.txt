@@ -664,8 +664,8 @@ removing elems: pop_back(), pop_front(), erase(iter), erase(iter1, iter2), clear
   popping doesn't return the element; you must get its value before popping
 forward_list has no insert, emplace, erase. instead it has: insert_after, emplace_after, erase_after. also: before_begin
 resize() removes elems, if new size is smaller than old size. otherwise adds elems (either value-initialized or explicit init as 2nd arg).
-NOTE: adding/removing elems in vector, string or deque might invalidate existing iterators, refs and pointers to the container
-vector elems are always contiguous. when adding elems to vector, the whole vector might be moved in memory to make the new elems fit.
+WARNING: adding/removing elems in vector, string or deque might invalidate existing iterators, refs and pointers to the container
+vector elems are always contiguous. when adding elems to vector, the whole vector might be moved in memory to make the new elems fit!
 managing vector or string memory: shrink_to_fit(), capacity(), reserve(spaceForNElems)
 
 string class has many ways for construction from C-style char[]s, etc. (p. 360)
