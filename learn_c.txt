@@ -196,7 +196,7 @@ range-for:
 
 vector is a template. compiler creates classes or functions with templates.
 vector<int> nums; // empty vector, can be added to
-vector<string> strs = { "aaa", "bbb" }; // can omit the =
+vector<string> strs = { "aaa", "bbb" }; // c++11 brace-initialization; can omit the '='
 vector<string> strs( 10, "hi" ); // 10 times "hi"; using parentheses means that we "construct the object"
 strs.push_back( "additional str" ), strs.size(), strs.empty()
 use vector<int>::size_type in loops.
