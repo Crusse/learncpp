@@ -5,36 +5,11 @@
 #include <vector>
 
 #include "Tile.h"
-
-template <typename ArrayType>
-class DynamicArray {
-
-  static const ELEM_INCREMENT = 64;
-
-  ArrayType data* = nullptr;
-  size_t size = 0;
-
-  DynamicArray() {
-    data = new ArrayType[ ELEM_INCREMENT ];
-  }
-
-public:
-
-  void push( ArrayType datum ) {
-
-    if ( size >= ELEM_INCREMENT ) {
-      ArrayType * oldData = data;
-    }
-  }
-
-  ~DynamicArray() {
-
-  }
-};
+#include "DynamicArray.h"
 
 class World {
 
-  std::vector<Tile> tiles;
+  DynamicArray<Tile> tiles;
   size_t columns;
 
 public:
@@ -47,29 +22,27 @@ public:
     for ( auto i = tileChars.begin(); i != tileChars.end(); ++i ) {
       // Chars on this row
       for ( size_t j = 0; ( *i )[ j ] != 0; ++j ) {
-        Tile tile( ( *i )[ j ] );
-        tiles.push_back( tile );
+        tiles.push( Tile( ( *i )[ j ] ) );
         size_t colNum = j + 1;
         if ( colNum > maxCols )
           maxCols = colNum;
       }
     }
 
+    // TODO: pad short rows with dots in missing columns
+
     columns = maxCols;
   }
 
   void print() {
 
-    auto tile = tiles.begin();
-    auto firstTile = tiles.begin();
-
-    for ( ; tile != tiles.end(); ++tile ) {
-      std::cout << tile->character;
-      std::vector<Tile>::difference_type index = tile - firstTile;
-      if ( index % columns == columns - 1 )
+    for ( size_t i = 0; i < tiles.length(); ++i ) {
+      std::cout << tiles[ i ].character;
+      if ( i % columns == columns - 1 )
         std::cout << std::endl;
     }
   }
 };
 
 #endif
+

@@ -7,6 +7,7 @@ public:
 
   char character = '.';
 
+  Tile() = default;
   Tile( char character ) : character( character ) {}
 };
 
