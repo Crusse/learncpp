@@ -1,4 +1,5 @@
 #include <iostream>
+#include "ncurses.h"
 
 struct Tile {
   char character = '.';
@@ -27,7 +28,7 @@ public:
 int main( int argc, char** argv ) {
 
   World world;
-  
+
   for ( int i = 1; i < argc && i < World::WORLD_HEIGHT; ++i ) {
     for ( size_t j = 0; argv[ i ][ j ] != 0 && j < World::WORLD_WIDTH; ++j ) {
       Tile tile;

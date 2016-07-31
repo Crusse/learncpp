@@ -46,7 +46,7 @@ M-char: 'M', \115, \x4d
 
 NOTE: initialization is not assigment.
 int i = 0; // (copy-)initialization
-i = 2; // assignment
+i = 2; // assignment (obliterates old value and replaces it with new one)
 
 uninitialized variables are default-initialized.
   built-in types (like ints, arrays or pointers) outside of funcs and classes are 0.
@@ -55,14 +55,26 @@ uninitialized variables are default-initialized.
   class-types are initialized according to class constructor.
 value-initialization: compiler creates value for containers whose size but not initial value is specified.
   int arr[10]; // uninitialized!
-  int arr[10] = {}; // val-inited to 10 ints of val 0
+  int arr[10] = {}; // val-inited to 10 ints of val 0; this is list-initialization
 should always initialize built-in types!
+
+many forms of initialization. these are equivalent:
+  int num = 0;
+  int num = {0};
+  int num{0};
+  int num(0);
+c++11 generalizes curly-brace/list initialization (earlier curly braces could be used only in restricted ways).
+c++11 list initialization has one important new property: it prevents loss of information.
+  long double pi = 3.1415926536;
+  int a{pi}  or  int a = {pi}  // error: narrowing conversion required (truncated to int)
+  int b(pi)  or  int b = pi    // ok: value is truncated to int without compiler error
 
 declaration makes var type and name known to code.
 definition is declaration, plus it allocates storage and may give initial val.
-extern int i; // declaration
+extern int i; // declaration; the 'extern' keyword forces 'i' to be only a declaration
 int j; // definition
-extern int k = 3; // initialization overrides the extern, so this is a definition
+extern int k = 3; // initialization overrides the 'extern', so this is a definition
+vars can be declared multiple times, but only defined once.
 
 preprocessor variables are managed by preprocessor, not compiler. no need to use std:: prefix.
 
@@ -75,9 +87,16 @@ pointer can be unitialized. can't point to a reference.
   *pd = 3; // dereference
   cout << *pd; // dereference
 null pointers:
-  int *p = nullptr;
   int *p = 0;
   int *p = NULL; // must #include cstdlib; NULL is a preprocessor var, equals 0
+  int *p = nullptr; // recommended for modern use; is of type std::nullptr_t, which is always a pointer type
+    class MyClass {
+    public:
+      MyClass( int * numPtr ) { std::cout << "Ptr ctor" << std::endl; }
+      MyClass( int num ) { std::cout << "Num ctor" << std::endl; }
+    }
+    // Above case is ambiguous when constructed with MyClass(0) or MyClass(NULL).
+    // Constructing with MyClass(nullptr) will always choose MyClass(int * numPtr).
 null pointers convert to false, otherwise true.
 two pointers compare equal if they point to same memory loc.
 as with other built-in types, should always initialize pointers!
@@ -137,10 +156,12 @@ const int i = 42; // is a constexpr
 const int i = myFunc(); // not necessarily a constexpr, if compiler can't get return val at compile-time
 
 typedef is a type alias.
-  typedef int numero; numero i = 2;
-  typedef numero *pnum; pnum = &i;
-  const pnum ptr = 0; // const pointer to int, _not_ pointer to const int
-C+11 has using:
+  typedef int numero;
+  numero i = 2;
+  typedef numero *pnum;
+  pnum pi = &i;
+  const pnum ptr = 0; // const pointer to int, _not_ pointer to const int; const always modifies the _base type_ (here ptr-to-int)
+C+11 has 'using' (which has same semantics as 'typedef' but diff syntax):
   using numero = int;
 
 declaration syntax: "base-type followed by declarators"
@@ -163,6 +184,7 @@ auto usually ignores top-level const; must const explicitly.
   const auto j = i; // const int
   auto &j = i; // ref to const int; const is low-level
   auto pi = &i; // const int*
+use auto whenever you can! auto requires an initializer (so that you never forget to init) and guarantees no implicit conversions.
 decltype deduces type from the given expression.
   decltype(func()) i = 2;
 decltype doesn't ignore top-level const and references when expression is a var:

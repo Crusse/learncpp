@@ -1,11 +1,13 @@
 CC = g++
 LDFLAGS = -lncurses
-CCFLAGS = -v -std=c++11 -Wall -Werror=conversion
+CCFLAGS = -std=c++11 -Wall -Werror=conversion
 BUILDDIR = build/
 
 all:
 	mkdir -p $(BUILDDIR)
-	$(CC) $(CCFLAGS) main.cpp -o $(BUILDDIR)all.out $(LDFLAGS)
+	$(CC) $(CCFLAGS) game/*.cpp -o $(BUILDDIR)game $(LDFLAGS)
+	$(CC) $(CCFLAGS) typedef_tests.cpp -o $(BUILDDIR)typedef_tests $(LDFLAGS)
+	$(CC) $(CCFLAGS) nullptr_vs_NULL_vs_0.cpp -o $(BUILDDIR)nullptr_vs_NULL_vs_0 $(LDFLAGS)
 
 # target to clean up the object files and any core files
 # executing "make clean" in a subdirectory will remove all
