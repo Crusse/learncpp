@@ -16,6 +16,7 @@ char32_t (unicode)  32 bits
 int                 16 bits ('unsigned int' can be abbrev'd to 'unsigned')
 long                32 bits (at least as big as int)
 long long           64 bits (at least as big as long)
+float               6 significant digits (typically 32 bits)
 double              10 significant digits (typically 64 bits)
 
 suffixes/postfixes/prefixes in literals:
@@ -200,6 +201,16 @@ if an expression returns an lvalue, then decltype returns a reference:
 headers include class definitions, const vars etc. that can be defined only once in a file.
 header is usually named after the class that's inside it (My_class.h).
 header guards prevent one header from being included multiple times.
+  #ifndef FOO_H
+  #define FOO_H
+  // code here
+  #endif
+difference between <...> and "..."
+  compiler-specific, but <...> usually used for system libraries, and "..." for your own app headers
+  g++ implementation: http://gcc.gnu.org/onlinedocs/cpp/Include-Syntax.html
+c++ contains the c-library. to include a c-library header, use  <foobar.h>  or  <cfoobar>
+  prefer the latter, as it's the c++ version of the c-library, whereas foobar.h is the c version
+  all names in cfoobar are inside the std namespace, but names in foobar.h are not
 headers shouldn't have "using" declarations, to prevent name conflicts.
   if header file has "using", the including file will use those "using" declarations automatically.
 using std::cin  or  using namespace std
@@ -469,7 +480,7 @@ methods defined _inside_ the class are implicitly inline
 
 constructor has the same name as the class
 constructors have no return type
-can have multiple constuctors, i.e. constructor can be overloaded (must have diff method signatures, of course)
+can have multiple constructors, i.e. constructor can be overloaded (must have diff method signatures, of course)
 if no constructor is defined, constructor creates a 'synthesized default constructor'
   default-initializes class vars if they aren't already initialized when defined (e.g. int myVar = 123;)
 can define default constructor manually: MyClassType::MyClassType() = default; // c++11 syntax; for older, use initializer list (see below)
