@@ -71,11 +71,24 @@ c++11 list initialization has one important new property: it prevents loss of in
   int b(pi)  or  int b = pi    // ok: value is truncated to int without compiler error
 
 declaration makes var type and name known to code.
-definition is declaration, plus it allocates storage and may give initial val.
-extern int i; // declaration; the 'extern' keyword forces 'i' to be only a declaration
-int j; // definition
-extern int k = 3; // initialization overrides the 'extern', so this is a definition
-vars can be declared multiple times, but only defined once.
+  extern int bar;
+  extern int g(int, int);
+  double f(int, double); // extern can be omitted for function declarations
+  class foo; // no extern allowed for type declarations
+definition is declaration, plus it allocates storage and may give initial val. compiler needs definition in the linking stage.
+  int bar;
+  int g(int lhs, int rhs) {return lhs*rhs;}
+  double f(int i, double d) {return i+d;}
+  class foo {};
+  extern int k = 3; // initialization overrides the 'extern', so this is a definition
+names (vars, funcs, classes) can be declared multiple times, but only defined once.
+  https://en.wikipedia.org/wiki/One_Definition_Rule
+careful: there are subtle differences between definition and declaration:
+  http://stackoverflow.com/questions/1410563/what-is-the-difference-between-a-definition-and-a-declaration
+  static class vars: http://stackoverflow.com/questions/11178434/static-variable-in-the-class-declaration-or-definition
+    declaring and initializing a static class var is _not_ definition
+    NOTE: anything that is inside the class is _just a declaration_. functions inside classes are inlined, so that they
+          do not violate the one defition rule.
 
 preprocessor variables are managed by preprocessor, not compiler. no need to use std:: prefix.
 
@@ -402,6 +415,11 @@ print( const int *beg, const int *end )
 function default arg values should be specified in headers.
 func can be declared many times. when re-declaring, we can add default args but not modify prev declared default args.
 'inline' functions avoid function call overhead. hint to compiler to replace func calls with contents of func.
+  this is not the actual use case nowadays for inlining functions;
+  inlining exists to allow defining the function multiple times;
+    when the class declaration (i.e. the .h file) is included in multiple .cpp, the 'one definition rule' cannot be violated
+    see above for the 'one defition rule', which states that only one definition of a name can exists in a program
+functions defined in-class are always inlined, automatically
 for inline and constexpr functions, the compiler needs whole definition (not just declaration). define them in headers.
 
 assert(expr) is a preprocessor macro in <cassert>. exits program if expr is 0.
@@ -481,7 +499,7 @@ methods defined _inside_ the class are implicitly inline
 constructor has the same name as the class
 constructors have no return type
 can have multiple constructors, i.e. constructor can be overloaded (must have diff method signatures, of course)
-if no constructor is defined, constructor creates a 'synthesized default constructor'
+if no constructor is defined, compiler creates a 'synthesized default constructor'
   default-initializes class vars if they aren't already initialized when defined (e.g. int myVar = 123;)
 can define default constructor manually: MyClassType::MyClassType() = default; // c++11 syntax; for older, use initializer list (see below)
 constructor initializer list can be used to do computation:
@@ -493,7 +511,7 @@ copying, assignment and destruction can also be defined manually per class; othe
 synthesized versions copy, assign and destroy the object's member vars
 object is destroyed when they cease to exist, such as when its surrounding block exits, or when the array or vector it's in is destroyed
   c++ has 3 types of storage: static, automatic, dynamic
-  static vars are global vars or local vars with 'static' keyword.
+  static vars are global vars, or local vars with the 'static' keyword.
   automatic vars are regular variables in scopes. they're destroyed when scope exits.
   dynamic vars are created and destroyed with new/delete or malloc/free.
 probably need to manually define these if you allocate resources outside of the object's member vars
@@ -597,19 +615,29 @@ literal class:
   - all its properties must be literal types and must have at least one constexpr constructor
 
 static member can be used through class or object
-  class MyClass { public: static void doSmth(); }
+  class MyClass { public: static void doSmth(); };
   MyClass::doSmth();
   MyClass obj; obj.doSmth(); // equivalent
 static members can't use 'this', explicitly or implicitly
   MyClass::doSmth() can't call non-static members
-the 'static' keyword is used only in in-class declaration, not when defining outside the class
-we can't initialize static members in-class, unless member is also const/constexpr
-NOTE: in addition to the in-class declaration, you should always define statics outside the class (p. 303)
-static members can have incomplete types
+the 'static' keyword is used only in the in-class _declaration_, not when _defining_ outside the class
+  class MyClass { public: static int fooBar; }; // file.h
+  MyClass::fooBar = 42; // file.cpp
+you _can't_ initialize static members in-class, unless member is const/constexpr
+  class MyClass { static const int FOO_BAR = 42; }; // OK, but only because initializer is a constexpr
+  http://stackoverflow.com/questions/11178434/static-variable-in-the-class-declaration-or-definition
+    declaring and initializing a static member in-class is _not_ definition
+  NOTE: anything that is inside the class is _just a declaration_. functions inside classes are inlined, so that they
+        do not violate the one defition rule: https://en.wikipedia.org/wiki/One_Definition_Rule
+  NOTE: in addition to the in-class _declaration_, you should always _define_ statics outside the class (p. 303):
+    class MyClass { static const int FOO_BAR = 42; }; // In .h file. Declaration and initialization only.
+    const int MyClass::FOO_BAR; // In .cpp file. This is the definition.
+static members can have incomplete types, unlike non-static members
   class MyClass { static MyClass memberVar; } // memberVar is an incomplete type (declared but never defined), 
                                               // as MyClass is not finished yet
-  class MyClass { MyClass *memberVar; } // also OK; incomplete type as non-static member must be ref/pointer
-  class MyClass { MyClass memberVar; } // error: data members must have complete type
+  class MyClass { MyClass *memberVar; } // also OK; incomplete non-static member of the same type must be ref/pointer
+  class MyClass { MyClass memberVar; } // error: all of MyClass hasn't been parsed yet, and memberVar is
+                                       // non-static, so the type of memberVar is incomplete
 static members can be used as methods' default arguments
 
 iostream header:
