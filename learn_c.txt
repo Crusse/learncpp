@@ -90,6 +90,7 @@ careful: there are subtle differences between definition and declaration:
     declaring and initializing a static class var is _not_ definition
     NOTE: anything that is inside the class is _just a declaration_. functions inside classes are inlined, so that they
           do not violate the one defition rule.
+  a (possibly wrong) simplification: anything with an initializer outside of a class definition is a definition
   see 'static members' further below
 
 preprocessor variables are managed by preprocessor, not compiler. no need to use std:: prefix.
@@ -101,13 +102,29 @@ external linkage: symbol is accessible throughout the program
   i.e. the combination of all translation unit
 http://stackoverflow.com/questions/1358400/what-is-external-linkage-and-internal-linkage-in-c
   You can explicitly control the linkage of a symbol by using the extern and static keywords.
-  If the linkage isn't specified then the default linkage is:
+  NOTE: if the linkage isn't specified then the default linkage is:
     extern for non-const symbols
     static (internal) for const symbols
-  NOTE: 'static' for internal linkage is deprecated by c++; use unnamed namespaces instead
+      http://stackoverflow.com/questions/998425/why-does-const-imply-internal-linkage-in-c-when-it-doesnt-in-c
+      because of this, 'static const' is redundant, 'const' is enough, but 'static const' is best for c compatibility
+  NOTE: 'static' for internal linkage was for a short while deprecated in c++; better to use unnamed namespaces instead?
 c++ has no concept of a 'module', but internal linkage can be thought as a tool for modularization (each .cpp is a module)
 a global object is an object defined outside of any function or class
-  global objects can be global throughout the file (internal linking) or global throughout the program (extern)
+  global objects can be global throughout the file (static, internal linking) or global throughout the program (extern)
+to use translation-unit-specific constants, which the compiler can use as a compile-time constant, just use 'const' in a header
+  const int SOME_CONST = 42; // compiler can substitute this at compile-time
+  this is why const has internal linkage by default:
+    "Because const objects can be used as compile-time values in C++, this feature urges programmers to provide explicit initializer values for each const"
+
+compiler process
+  preprocessor copies all #included contents to .cpp files
+  each translation unit (or compilation unit), i.e. .cpp file, is transformed to an object file
+  linker combines object files into an executable
+    all _scope_ in c and c++ spans at most a single translation unit (.cpp file)
+    'extern' only makes it possible to _refer_ to a name _defined_ in _another_ translation unit
+    https://en.wikipedia.org/wiki/Linkage_(software)
+      "A name's linkage is related to, but distinct from, its scope"
+    http://www.learncpp.com/cpp-tutorial/4-3a-scope-duration-and-linkage-summary/
 
 compound types: references, pointers, arrays
 reference is an alias, just another name for var; must be initialized.
