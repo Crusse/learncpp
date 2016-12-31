@@ -77,7 +77,7 @@ declaration makes var type and name known to code.
   double f(int, double); // extern can be omitted for function declarations
   class foo; // no extern allowed for type declarations
 definition is declaration, plus it allocates storage and may give initial val. compiler needs definition in the linking stage.
-  int bar;
+  int bar; // notice that, unlike with functions, just the type and name form a _definition_. 'extern' means declaration.
   int g(int lhs, int rhs) {return lhs*rhs;}
   double f(int i, double d) {return i+d;}
   class foo {};
@@ -92,6 +92,7 @@ careful: there are subtle differences between definition and declaration:
           do not violate the one defition rule.
   a (possibly wrong) simplification: anything with an initializer outside of a class definition is a definition
   see 'static members' further below
+http://www.goldsborough.me/c/c++/linker/2016/03/30/19-34-25-internal_and_external_linkage_in_c++/
 
 preprocessor variables are managed by preprocessor, not compiler. no need to use std:: prefix.
 
