@@ -109,6 +109,7 @@ these have external linkage by default:
   enums
   names of classes, methods, static data members (const or not), nested classes and enums, funcs with friend decls in class
   templates that are not static function templates
+  names of functions, and _extern_ variables, that are _first_ declared at block scope
 http://stackoverflow.com/questions/1358400/what-is-external-linkage-and-internal-linkage-in-c
   You can explicitly control the linkage of a symbol by using the extern and static keywords.
   NOTE: if the linkage isn't specified then the default linkage is:
