@@ -70,6 +70,7 @@ c++11 list initialization has one important new property: it prevents loss of in
   int a{pi}  or  int a = {pi}  // error: narrowing conversion required (truncated to int)
   int b(pi)  or  int b = pi    // ok: value is truncated to int without compiler error
 
+to use a var in multiple files, you must declare it in all of those files.
 declaration makes var type and name known to code.
   extern int bar;
   extern int g(int, int);
@@ -89,8 +90,24 @@ careful: there are subtle differences between definition and declaration:
     declaring and initializing a static class var is _not_ definition
     NOTE: anything that is inside the class is _just a declaration_. functions inside classes are inlined, so that they
           do not violate the one defition rule.
+  see 'static members' further below
 
 preprocessor variables are managed by preprocessor, not compiler. no need to use std:: prefix.
+
+each .cpp file (+ all .h files it #includes) defines a translation unit. it's the source code from which object file is created.
+internal linkage: symbol is accessible only in one translation unit
+external linkage: symbol is accessible throughout the program
+  i.e. stuff accessible through the whole program
+  i.e. the combination of all translation unit
+http://stackoverflow.com/questions/1358400/what-is-external-linkage-and-internal-linkage-in-c
+  You can explicitly control the linkage of a symbol by using the extern and static keywords.
+  If the linkage isn't specified then the default linkage is:
+    extern for non-const symbols
+    static (internal) for const symbols
+  NOTE: 'static' for internal linkage is deprecated by c++; use unnamed namespaces instead
+c++ has no concept of a 'module', but internal linkage can be thought as a tool for modularization (each .cpp is a module)
+a global object is an object defined outside of any function or class
+  global objects can be global throughout the file (internal linking) or global throughout the program (extern)
 
 compound types: references, pointers, arrays
 reference is an alias, just another name for var; must be initialized.
@@ -380,7 +397,8 @@ array is always passed as pointer to first elem, but param can be any of these:
   void print( int[10] ); // 10 acts as documentation; still passed as int*
 ways to handle array elem count in functions: C-style null (sentinel), pass in begin() and end() ptr, pass in count. p. 216
 NOTE: ref and ptr params (arrays too) should be const if they're not changed inside the func.
-NOTE: using ref or ptr for param with large data increases performance because it prevents copying the data; small data (e.g. int or double) should be passed by value
+NOTE: using ref or ptr for param with large data increases performance because it prevents copying the data
+  small data (e.g. int or double) should be passed by value, because c++'s references implementation uses pointers anyway, which causes a layer of indirection
 reference-to-array param does not make the arg decay to a pointer-to-first-elem:
   void print( int (&arr)[10] ); // passed in arr _must_ have 10 ints
 multidimensional array:
@@ -639,6 +657,7 @@ static members can have incomplete types, unlike non-static members
   class MyClass { MyClass memberVar; } // error: all of MyClass hasn't been parsed yet, and memberVar is
                                        // non-static, so the type of memberVar is incomplete
 static members can be used as methods' default arguments
+NOTE: to use class-specific constants, you should use const or static const, not #define, as #define can't rely on compiler to catch type errors
 
 iostream header:
   istream, wistream // reads from stream
