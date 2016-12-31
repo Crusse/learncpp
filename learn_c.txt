@@ -88,11 +88,16 @@ careful: there are subtle differences between definition and declaration:
   http://stackoverflow.com/questions/1410563/what-is-the-difference-between-a-definition-and-a-declaration
   static class vars: http://stackoverflow.com/questions/11178434/static-variable-in-the-class-declaration-or-definition
     declaring and initializing a static class var is _not_ definition
-    NOTE: anything that is inside the class is _just a declaration_. functions inside classes are inlined, so that they
-          do not violate the one defition rule.
-  a (possibly wrong) simplification: anything with an initializer outside of a class definition is a definition
   see 'static members' further below
 http://www.goldsborough.me/c/c++/linker/2016/03/30/19-34-25-internal_and_external_linkage_in_c++/
+
+a declaration is a definition unless it
+  declares a function without specifying the function's body
+  contains the extern specifier or a linkage-specification and neither an initializer nor a function body
+  declares a static data member in a class definition
+  is a class name declaration
+  is an opaque-enum-declaration
+  is a typedef declaration, a using-declaration, or a using-directive
 
 preprocessor variables are managed by preprocessor, not compiler. no need to use std:: prefix.
 
@@ -121,7 +126,7 @@ http://stackoverflow.com/questions/1358400/what-is-external-linkage-and-internal
 c++ has no concept of a 'module', but internal linkage can be thought as a tool for modularization (each .cpp is a module)
 a global object is an object defined outside of any function or class
   global objects can be global throughout the file (static, internal linking) or global throughout the program (extern)
-to use translation-unit-specific constants, which the compiler can use as a compile-time constant, just use 'const' in a header
+NOTE(constants): use translation-unit-specific constants, which the compiler can use as a compile-time constant
   const int SOME_CONST = 42; // compiler can substitute this at compile-time
   this is why const has internal linkage by default:
     "Because const objects can be used as compile-time values in C++, this feature urges programmers to provide explicit initializer values for each const"
@@ -677,6 +682,7 @@ you _can't_ initialize static members in-class, unless member is const/constexpr
   NOTE: in addition to the in-class _declaration_, you should always _define_ statics outside the class (p. 303):
     class MyClass { static const int FOO_BAR = 42; }; // In .h file. Declaration and initialization only.
     const int MyClass::FOO_BAR; // In .cpp file. This is the definition.
+  NOTE: because of these complicated rules, just use 'const int FOO = 42' in .h file, outside class (see 'NOTE(constants)' above)
 static members can have incomplete types, unlike non-static members
   class MyClass { static MyClass memberVar; } // memberVar is an incomplete type (declared but never defined), 
                                               // as MyClass is not finished yet
@@ -684,7 +690,6 @@ static members can have incomplete types, unlike non-static members
   class MyClass { MyClass memberVar; } // error: all of MyClass hasn't been parsed yet, and memberVar is
                                        // non-static, so the type of memberVar is incomplete
 static members can be used as methods' default arguments
-NOTE: to use class-specific constants, you should use const or static const, not #define, as #define can't rely on compiler to catch type errors
 
 iostream header:
   istream, wistream // reads from stream
