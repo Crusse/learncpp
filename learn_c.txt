@@ -101,6 +101,14 @@ internal linkage: symbol is accessible only in one translation unit
 external linkage: symbol is accessible throughout the program
   i.e. stuff accessible through the whole program
   i.e. the combination of all translation unit
+http://en.cppreference.com/w/cpp/language/storage_duration#Linkage
+  "If a name has linkage, it refers to the same entity as the same name introduced by a declaration in another scope. If a variable, function, or another entity with the same name is declared in several scopes, but does not have sufficient linkage, then several instances of the entity are generated."
+these have external linkage by default:
+  functions that are not declared static
+  global variables that are not const or static, or that are declared extern
+  enums
+  names of classes, methods, static data members (const or not), nested classes and enums, funcs with friend decls in class
+  templates that are not static function templates
 http://stackoverflow.com/questions/1358400/what-is-external-linkage-and-internal-linkage-in-c
   You can explicitly control the linkage of a symbol by using the extern and static keywords.
   NOTE: if the linkage isn't specified then the default linkage is:
