@@ -93,7 +93,7 @@ http://www.goldsborough.me/c/c++/linker/2016/03/30/19-34-25-internal_and_externa
 
 a declaration is a definition unless it
   declares a function without specifying the function's body
-  contains the extern specifier or a linkage-specification and neither an initializer nor a function body
+  contains the extern specifier or a linkage-specification, and neither an initializer nor a function body
   declares a static data member in a class definition
   is a class name declaration
   is an opaque-enum-declaration
